@@ -2,11 +2,14 @@
     <div style="--inverted-color: {invertedColor}">
         <h1>Color this page</h1>
         {#if noResult && hasRun && query !== ''}
-            <h2>No color found</h2>
+            <h2>Ah bummer</h2>
+            <h3>No colors found</h3>
         {:else if hasRun && query !== ''}
             <h2>{bgColor.name}</h2>
+            <h3>{bgColorArray.length} colors found</h3>
         {:else}
             <h2>Type in a color below</h2>
+            <h3>And the page will cycle through the results</h3>
         {/if}
         {#await colors}
             <p>Retrieving Color List...</p>
@@ -20,36 +23,50 @@
 
 <script>
     let colors
-    if (localStorage.getItem('colors')) {
-      colors = JSON.parse(localStorage.getItem('colors'))
-    }
-    else {
+    if ( localStorage.getItem( 'colors' ) ) {
+        colors = JSON.parse( localStorage.getItem( 'colors' ) )
+    } else {
         getColors().then( res => {
             colors = res
-            localStorage.setItem('colors', JSON.stringify(colors))
+            localStorage.setItem( 'colors', JSON.stringify( colors ) )
         } )
     }
     let bgColor = { hex: '#fff' }
     let noResult = false
     let hasRun = false
+    let interval
     let invertedColor = '#074ddc'
-    let query
-    $: if ( colors && query ) {
+    let bgColorArray
+    let query = ''
+    $: if ( query === '' ) {
+        bgColor.hex = '#fff'
+        invertedColor = '#074ddc'
         findAndSetColors()
-        hasRun = true
+    } else if ( colors ) {
+        findAndSetColors()
     }
-    else if (query === '') {
-    	bgColor.hex = '#fff'
-		invertedColor = '#074ddc'
-	}
 
     async function findAndSetColors ( name ) {
-        await colors
-        const bgColorArray = colors.filter( color => color.name.toLowerCase().includes( query.toLowerCase() ) )
-        if ( bgColorArray.length >= 1 && query !== '' ) {
-            noResult = false
-            bgColor = bgColorArray[ 0 ]
-            invertedColor = invertColor( bgColor.hex )
+        window.clearInterval( interval )
+        if ( query !== '' ) {
+            await colors
+            bgColorArray = colors.filter( color => color.name.toLowerCase().includes( query.toLowerCase() ) )
+            if ( bgColorArray.length >= 1 ) {
+                let intervalCounter = 0
+                noResult = false
+                hasRun = true
+                bgColor = bgColorArray[ intervalCounter ]
+                invertedColor = invertColor( bgColor.hex )
+                interval = window.setInterval( () => {
+                    if ( intervalCounter < bgColorArray.length - 1 ) {
+                        intervalCounter++
+                    } else {
+                        intervalCounter = 0
+                    }
+                    bgColor = bgColorArray[ intervalCounter ]
+                    invertedColor = invertColor( bgColor.hex )
+                }, 1000 )
+            }
         } else {
             noResult = true
         }
@@ -105,7 +122,7 @@
         right: 0;
         margin: 0;
         background-color: var(--theme-color);
-		transition: background-color 0.1s ease-in-out;
+        transition: background-color 0.1s ease-in-out;
     }
 
     div {
@@ -118,7 +135,7 @@
         font-weight: 100;
     }
 
-    h1, h2 {
+    h1, h2, h3 {
         color: var(--inverted-color);
     }
 
@@ -126,11 +143,16 @@
         main {
             max-width: none;
         }
-		h1 {
-			font-size: 2em;
-		}
-		h2 {
-			font-size: 1em;
-		}
+
+        h1 {
+            font-size: 2em;
+        }
+
+        h2 {
+            font-size: 1em;
+        }
+        h3 {
+            font-size: 0.7em;
+        }
     }
 </style>
