@@ -103,7 +103,7 @@
     }
 
     div {
-        margin: auto;
+        margin-bottom: 2em;
     }
 
     h1 {
