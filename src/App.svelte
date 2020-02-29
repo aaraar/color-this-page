@@ -20,9 +20,15 @@
 
 <script>
     let colors
-    getColors().then( res => {
-        colors = res
-    } )
+    if (localStorage.getItem('colors')) {
+      colors = JSON.parse(localStorage.getItem('colors'))
+    }
+    else {
+        getColors().then( res => {
+            colors = res
+            localStorage.setItem('colors', JSON.stringify(colors))
+        } )
+    }
     let bgColor = { hex: '#fff' }
     let noResult = false
     let hasRun = false
